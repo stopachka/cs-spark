@@ -466,10 +466,12 @@ function syncRemoteFromPresence(peerId: string, data: PresenceState) {
   if (existing.baseColor !== colorHex) {
     existing.baseColor = colorHex;
     for (const mesh of existing.colorableMeshes) {
-      mesh.material.color.setHex(colorHex);
+      const material = mesh.material as THREE.MeshStandardMaterial;
+      material.color.setHex(colorHex);
     }
-    existing.beacon.material.color.setHex(colorHex);
-    existing.beacon.material.emissive.setHex(colorHex);
+    const beaconMaterial = existing.beacon.material as THREE.MeshStandardMaterial;
+    beaconMaterial.color.setHex(colorHex);
+    beaconMaterial.emissive.setHex(colorHex);
   }
 }
 
@@ -488,7 +490,8 @@ function applyVisualHealth(player: RemotePlayer, hp: number) {
   const base = new THREE.Color(player.baseColor);
   const tint = base.clone().multiplyScalar(0.35 + 0.65 * ratio);
   player.colorableMeshes.forEach((mesh) => {
-    mesh.material.color.set(tint);
+    const material = mesh.material as THREE.MeshStandardMaterial;
+    material.color.set(tint);
   });
 }
 
@@ -738,8 +741,9 @@ function updatePlayerAnimations(delta: number) {
     if (show) {
       player.beacon.scale.set(pulse, 1, pulse);
       if (alive) {
-        player.beacon.material.opacity = 0.7 + (1 - player.hp / 100) * 0.25;
-        player.beacon.material.emissiveIntensity = 0.7 + Math.max(0, 1 - player.hp / 100);
+        const beaconMaterial = player.beacon.material as THREE.MeshStandardMaterial;
+        beaconMaterial.opacity = 0.7 + (1 - player.hp / 100) * 0.25;
+        beaconMaterial.emissiveIntensity = 0.7 + Math.max(0, 1 - player.hp / 100);
       }
     }
   }
