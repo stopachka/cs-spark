@@ -36,6 +36,15 @@ type DamageEvent = {
   at?: number;
 };
 
+type RoomPresenceSnapshot = {
+  error?: string;
+  user?: {
+    peerId: string;
+    color?: string;
+  };
+  peers?: Record<string, PresenceState>;
+};
+
 const app = document.getElementById("app");
 if (!app) {
   throw new Error("#app element is missing");
@@ -77,6 +86,9 @@ const healthText = document.getElementById("health");
 if (!hud || !statusText || !healthText) {
   throw new Error("HUD elements missing");
 }
+const hudEl = hud;
+const statusTextEl = statusText;
+const healthTextEl = healthText;
 
 const sceneLight = new THREE.AmbientLight(0xa7bfdc, 1.05);
 scene.add(sceneLight);
@@ -371,7 +383,7 @@ function removePlayer(peerId: string) {
 }
 
 function refreshHealthText() {
-  healthText.textContent = `Health: ${Math.max(0, Math.ceil(localState.hp))}`;
+  healthTextEl.textContent = `Health: ${Math.max(0, Math.ceil(localState.hp))}`;
 }
 
 function refreshStats() {
@@ -384,7 +396,7 @@ function refreshStats() {
     .sort((a, b) => a.distance - b.distance);
 
   const playerNames = sortedByDistance
-    .map((peer) => peer.name)
+    .map((peer) => peer.player.name)
     .join(", ");
   const nearest = sortedByDistance.length
     ? sortedByDistance
@@ -393,11 +405,11 @@ function refreshStats() {
         .join(" | ")
     : "none";
   const names = playerNames.length > 0 ? ` | Nearby: ${playerNames}` : "";
-  hud.textContent = `Kills: ${killCount} | Players: ${1 + remotePlayers.size}${names} | Closest: ${nearest}`;
+  hudEl.textContent = `Kills: ${killCount} | Players: ${1 + remotePlayers.size}${names} | Closest: ${nearest}`;
 }
 
 function setPlayerStatus(message: string) {
-  statusText.textContent = message;
+  statusTextEl.textContent = message;
 }
 
 function isPeerAlive(peerState: PresenceState) {
@@ -590,7 +602,7 @@ async function connectToRoom() {
   refreshHealthText();
   refreshStats();
 
-  room.subscribePresence({}, (presence) => {
+  room.subscribePresence({}, (presence: RoomPresenceSnapshot) => {
   if (presence.error) {
     setPlayerStatus(`Presence error: ${presence.error}`);
       if (!fallbackAttempted && roomType === "arena") {
@@ -635,7 +647,7 @@ async function connectToRoom() {
     refreshStats();
   });
 
-  room.subscribeTopic("damage", (event) => {
+  room.subscribeTopic("damage", (event: DamageEvent) => {
     handleIncomingDamage(event);
   });
 
@@ -849,7 +861,7 @@ document.addEventListener("keyup", (event: KeyboardEvent) => {
   }
 });
 
-renderer.domElement.addEventListener("mousedown", (event) => {
+renderer.domElement.addEventListener("mousedown", (event: MouseEvent) => {
   if (event.button !== 0) {
     return;
   }
